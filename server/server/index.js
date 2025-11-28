@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 
-const HOST = '127.0.0.1'
+const HOST = '0.0.0.0'
 const PORT = 1000 || process.env.PORT
 
 // middleware
@@ -29,12 +29,25 @@ dotenv.config()
 
 
 const session = require('express-session')
-app.use(session({
 
-    resave: true,
+const MongoStore = require("connect-mongo");
+
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
     saveUninitialized: false,
-    secret: process.env.SECRET
-}))
+    store: MongoStore.create({
+      mongoUrl: process.env.CONNECTION_STRING,
+      ttl: 24 * 60 * 60, // 1 day
+    }),
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      httpOnly: true,
+      secure: false // Render HTTPS असेल तर true kar
+    }
+  })
+);
 
 // multer
 const multer = require('multer')
