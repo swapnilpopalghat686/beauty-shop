@@ -1,4 +1,7 @@
-        
+const express = require("express");
+const router = express.Router();
+const nodemailer = require("nodemailer");
+const users = require("../models/users"); 
 
 // 🧠 Temporary OTP store (later you can move this to MongoDB)
 let otpStore = {};
