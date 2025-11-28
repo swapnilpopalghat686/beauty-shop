@@ -3,29 +3,45 @@ const router = express.Router();
 const nodemailer = require("nodemailer");
 const appointments = require("../model/userSchema");
 
-// 🧠 Temporary OTP store (dev only)
+// Load .env
+require("dotenv").config();
+
+// 🧠 OTP Store (Temporary)
 let otpStore = {};
 
-// Test route
+
+// ------------------------
+// ✅ TEST ROUTES
+// ------------------------
+router.get("/send-otp", (req, res) => {
+  res.send("✅ Send OTP API is working...");
+});
+
+router.get("/verify-otp", (req, res) => {
+  res.send("✅ Verify OTP API is working...");
+});
+
 router.get("/appointments", (req, res) => {
   res.send("✅ Appointment API is working...");
 });
 
-// SEND OTP
+
+
+// ------------------------
+// ✅ SEND OTP (POST)
+// ------------------------
 router.post("/send-otp", async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
-    return res.status(400).json({
-      success: false,
-      message: "Email is required to send OTP",
-    });
+    return res
+      .status(400)
+      .json({ success: false, message: "Email is required" });
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   otpStore[email] = otp;
 
-  // CORRECT: env variables used
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -39,22 +55,20 @@ router.post("/send-otp", async (req, res) => {
     to: email,
     subject: "✨ OTP Verification for Appointment",
     html: `
-      <div style="font-family: Poppins, sans-serif; background: #fff0f6; padding: 20px; border-radius: 10px; border: 1px solid #f8bbd0;">
+      <div style="font-family: Poppins, sans-serif; background: #fff0f6; padding: 20px;">
         <h2 style="color: #e91e63; text-align: center;">💅 Nandini's Make-Over Studio</h2>
-        <p>Use the OTP below to verify your booking.</p>
-        <h1 style="background:#e91e63; color:#fff; padding:15px; text-align:center; border-radius:8px; letter-spacing:5px;">${otp}</h1>
+        <p>Your OTP is:</p>
+        <h1 style="background:#e91e63; color:#fff; padding:15px; text-align:center;">${otp}</h1>
       </div>
     `,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    res.json({
-      success: true,
-      message: "OTP sent successfully!",
-    });
+    return res.json({ success: true, message: "OTP sent successfully!" });
   } catch (error) {
-    res.status(500).json({
+    console.error("Send OTP Error:", error);
+    return res.status(500).json({
       success: false,
       message: "Failed to send OTP.",
       error: error.message,
@@ -62,7 +76,10 @@ router.post("/send-otp", async (req, res) => {
   }
 });
 
-// VERIFY OTP
+
+// ------------------------
+// ✅ VERIFY OTP (POST)
+// ------------------------
 router.post("/verify-otp", (req, res) => {
   const { email, otp } = req.body;
 
@@ -73,42 +90,45 @@ router.post("/verify-otp", (req, res) => {
     });
   }
 
-  if (parseInt(otp) === otpStore[email]) {
-    delete otpStore[email];
-    return res.json({
-      success: true,
-      message: "OTP verified successfully!",
-    });
+  const storedOtp = otpStore[email];
+
+  if (!storedOtp) {
+    return res
+      .status(400)
+      .json({ success: false, message: "OTP expired or not generated" });
   }
 
-  res.status(400).json({
-    success: false,
-    message: "Invalid OTP. Please try again.",
-  });
+  if (parseInt(otp) === storedOtp) {
+    delete otpStore[email];
+    return res.json({ success: true, message: "OTP verified successfully!" });
+  } else {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid OTP. Please try again." });
+  }
 });
 
-// CREATE APPOINTMENT
+
+
+// ------------------------
+// ✅ CREATE APPOINTMENT (POST)
+// ------------------------
 router.post("/appointments", async (req, res) => {
   try {
     const { name, email, phone, service, date, message } = req.body;
 
     if (!name || !email || !phone || !service || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "All required fields must be provided",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "All required fields must be provided" });
     }
 
-    const result = new appointments(req.body);
-    const data = await result.save();
+    const appointment = new appointments(req.body);
+    const data = await appointment.save();
 
-    // Email setup
     const transporter = nodemailer.createTransport({
       service: "gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-      },
+      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
     });
 
     // User confirmation mail
@@ -117,10 +137,10 @@ router.post("/appointments", async (req, res) => {
       to: email,
       subject: "🎉 Appointment Confirmed Successfully!",
       html: `
-        <h2>Your Appointment is Confirmed!</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Service:</b> ${service}</p>
-        <p><b>Date:</b> ${date}</p>
+          <h2>Your Appointment is Confirmed!</h2>
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Service:</b> ${service}</p>
+          <p><b>Date:</b> ${date}</p>
       `,
     };
 
@@ -130,10 +150,11 @@ router.post("/appointments", async (req, res) => {
       to: process.env.GMAIL_USER,
       subject: "🆕 New Appointment Booked!",
       html: `
-        <h2>New Appointment</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Service:</b> ${service}</p>
+          <h2>New Appointment Details</h2>
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Service:</b> ${service}</p>
+          <p><b>Date:</b> ${date}</p>
       `,
     };
 
@@ -145,8 +166,8 @@ router.post("/appointments", async (req, res) => {
       message: "Appointment booked successfully!",
       data,
     });
-
   } catch (err) {
+    console.error("Appointment Error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to create appointment.",

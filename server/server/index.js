@@ -44,7 +44,7 @@ require('./config/db');
 
 // Routes
 const userRoutes = require('./routes/userRoutes');
-app.use('/', userRoutes);
+app.use('/api', userRoutes);
 
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/admin', adminRoutes);
