@@ -28,7 +28,7 @@ export default function Appointment() {
   const handleSendOtp = async () => {
     if (!formData.email) return alert("Please enter email first!");
     try {
-      const res = await fetch("http://127.0.0.1:1000/send-otp", {
+      const res = await fetch("https://beauty-shop-3.onrender.com/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email }),
@@ -49,7 +49,7 @@ export default function Appointment() {
   // ✅ Step 2: Verify OTP
   const handleVerifyOtp = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:1000/verify-otp", {
+      const res = await fetch("https://beauty-shop-3.onrender.com/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, otp }),
@@ -80,7 +80,7 @@ export default function Appointment() {
     setSuccess(false);
 
     try {
-      const res = await fetch("http://127.0.0.1:1000/appointments", {
+      const res = await fetch("https://beauty-shop-3.onrender.com/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
